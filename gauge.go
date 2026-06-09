@@ -13,7 +13,7 @@ func (c *Cap) NewGaugeVec(opts prometheus.GaugeOpts, labels []string, capOpts Ca
 
 	return &CappedGaugeVec{
 		gaugeVec: gv,
-		lim:      newLimiter(opts.Name, capOpts.MaxSeries, c.cappedTotal),
+		lim:      newLimiter(opts.Name, labels, capOpts, c.cappedTotal),
 	}
 }
 

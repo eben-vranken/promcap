@@ -29,7 +29,7 @@ func TestCounterVecConcurrentAccess(t *testing.T) {
 
 func TestLimiterResolve(t *testing.T) {
 	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
-	lim := newLimiter("test_metric", 2, meta)
+	lim := newLimiter("test_metric", []string{"user"}, CapOpts{MaxSeries: 2}, meta)
 
 	gotA := lim.resolve([]string{"a"})
 	lim.resolve([]string{"a"})
@@ -46,5 +46,21 @@ func TestLimiterResolve(t *testing.T) {
 
 	if gotC[0] != overflowValue {
 		t.Errorf("c with full cap: got %q, want %q", gotC[0], overflowValue)
+	}
+}
+
+func TestLimiterResolveAllowList(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"method"}, CapOpts{MaxSeries: 100, Allow: map[string][]string{"method": {"GET", "POST"}}}, meta)
+
+	gotGet := lim.resolve([]string{"GET"})
+	gotDelete := lim.resolve([]string{"DELETE"})
+
+	if gotGet[0] != "GET" {
+		t.Errorf("Get did not resolve: got %q, want %q", gotGet[0], "GET")
+	}
+
+	if gotDelete[0] != overflowValue {
+		t.Errorf("Delete did not resolve: got %q, want %q", gotDelete[0], overflowValue)
 	}
 }
