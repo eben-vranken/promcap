@@ -20,7 +20,7 @@ func TestSuccesfulPromcapInit(t *testing.T) {
 	count, err := testutil.GatherAndCount(reg)
 
 	if err != nil {
-		t.Fatalf("Inconsitent metrics")
+		t.Fatalf("Fatal error: %v", err)
 	}
 
 	if count != 3 {
