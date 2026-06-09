@@ -13,7 +13,7 @@ func (c *Cap) NewHistogramVec(opts prometheus.HistogramOpts, labels []string, ma
 
 	return &CappedHistogramVec{
 		histogramVec: hgv,
-		lim:          newLimiter(maxSeries),
+		lim:          newLimiter(opts.Name, maxSeries, c.cappedTotal),
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 func TestCounterVecConcurrentAccess(t *testing.T) {
@@ -27,12 +28,17 @@ func TestCounterVecConcurrentAccess(t *testing.T) {
 }
 
 func TestLimiterResolve(t *testing.T) {
-	lim := newLimiter(2)
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", 2, meta)
 
 	gotA := lim.resolve([]string{"a"})
 	lim.resolve([]string{"a"})
 	lim.resolve([]string{"b"})
 	gotC := lim.resolve([]string{"c"})
+
+	if testutil.ToFloat64(meta.WithLabelValues("test_metric")) != 1 {
+		t.Errorf("series capped total: got %d, want %d", testutil.ToFloat64(meta.WithLabelValues("test_metric")), 1)
+	}
 
 	if gotA[0] != "a" {
 		t.Errorf("value within cap: got %q, want %q", gotA[0], "a")

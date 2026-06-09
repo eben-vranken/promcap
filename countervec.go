@@ -13,7 +13,7 @@ func (c *Cap) NewCounterVec(opts prometheus.CounterOpts, labels []string, maxSer
 
 	return &CappedCounterVec{
 		counterVec: cv,
-		lim:        newLimiter(maxSeries),
+		lim:        newLimiter(opts.Name, maxSeries, c.cappedTotal),
 	}
 }
 

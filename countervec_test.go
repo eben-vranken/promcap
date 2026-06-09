@@ -17,7 +17,7 @@ func TestSuccesfulCounterVecInit(t *testing.T) {
 	cv.WithLabelValues("c").Inc()
 	cv.WithLabelValues("d").Inc()
 
-	count, err := testutil.GatherAndCount(reg)
+	count, err := testutil.GatherAndCount(reg, "request_total")
 
 	if err != nil {
 		t.Fatalf("Fatal error: %v", err)

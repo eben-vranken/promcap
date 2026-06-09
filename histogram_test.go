@@ -17,7 +17,7 @@ func TestSuccesfulHistogramVecInit(t *testing.T) {
 	cv.WithLabelValues("c").Observe(1)
 	cv.WithLabelValues("d").Observe(1)
 
-	count, err := testutil.GatherAndCount(reg)
+	count, err := testutil.GatherAndCount(reg, "request_total")
 
 	if err != nil {
 		t.Fatalf("Fatal error: %v", err)

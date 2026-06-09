@@ -3,18 +3,24 @@ package promcap
 import (
 	"strings"
 	"sync"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type limiter struct {
 	maxSeries int
 	mu        sync.Mutex
 	seen      map[string]struct{}
+	name      string
+	meta      *prometheus.CounterVec
 }
 
-func newLimiter(maxSeries int) *limiter {
+func newLimiter(name string, maxSeries int, meta *prometheus.CounterVec) *limiter {
 	return &limiter{
 		maxSeries: maxSeries,
 		seen:      make(map[string]struct{}),
+		name:      name,
+		meta:      meta,
 	}
 }
 
@@ -35,9 +41,11 @@ func (lim *limiter) resolve(lvs []string) []string {
 		return lvs
 	}
 
+	lim.meta.WithLabelValues(lim.name).Inc()
+
 	overflow := make([]string, len(lvs))
 
-	for i, _ := range overflow {
+	for i := range overflow {
 		overflow[i] = overflowValue
 	}
 
