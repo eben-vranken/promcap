@@ -41,9 +41,13 @@ func (lim *limiter) resolve(lvs []string) []string {
 		return lvs
 	}
 
+	return lim.overflow(len(lvs))
+}
+
+func (lim *limiter) overflow(n int) []string {
 	lim.meta.WithLabelValues(lim.name).Inc()
 
-	overflow := make([]string, len(lvs))
+	overflow := make([]string, n)
 
 	for i := range overflow {
 		overflow[i] = overflowValue
