@@ -13,7 +13,7 @@ func TestCounterVecConcurrentAccess(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	regWrap := Wrap(reg)
 
-	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"user"}, 100)
+	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 100})
 	wg := sync.WaitGroup{}
 
 	for i := 0; i < 1000; i++ {
@@ -37,7 +37,7 @@ func TestLimiterResolve(t *testing.T) {
 	gotC := lim.resolve([]string{"c"})
 
 	if testutil.ToFloat64(meta.WithLabelValues("test_metric")) != 1 {
-		t.Errorf("series capped total: got %d, want %d", testutil.ToFloat64(meta.WithLabelValues("test_metric")), 1)
+		t.Errorf("series capped total: got %f, want %d", testutil.ToFloat64(meta.WithLabelValues("test_metric")), 1)
 	}
 
 	if gotA[0] != "a" {

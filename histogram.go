@@ -7,13 +7,13 @@ type CappedHistogramVec struct {
 	lim          *limiter
 }
 
-func (c *Cap) NewHistogramVec(opts prometheus.HistogramOpts, labels []string, maxSeries int) *CappedHistogramVec {
+func (c *Cap) NewHistogramVec(opts prometheus.HistogramOpts, labels []string, capOpts CapOpts) *CappedHistogramVec {
 	hgv := prometheus.NewHistogramVec(opts, labels)
 	c.reg.MustRegister(hgv)
 
 	return &CappedHistogramVec{
 		histogramVec: hgv,
-		lim:          newLimiter(opts.Name, maxSeries, c.cappedTotal),
+		lim:          newLimiter(opts.Name, capOpts.MaxSeries, c.cappedTotal),
 	}
 }
 

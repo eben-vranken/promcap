@@ -11,7 +11,7 @@ func TestSuccesfulGaugeVecInit(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	regWrap := Wrap(reg)
 
-	cv := regWrap.NewGaugeVec(prometheus.GaugeOpts{Name: "request_total"}, []string{"user"}, 2)
+	cv := regWrap.NewGaugeVec(prometheus.GaugeOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 2})
 	cv.WithLabelValues("a").Inc()
 	cv.WithLabelValues("b").Inc()
 	cv.WithLabelValues("c").Inc()

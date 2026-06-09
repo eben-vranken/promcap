@@ -7,13 +7,13 @@ type CappedCounterVec struct {
 	lim        *limiter
 }
 
-func (c *Cap) NewCounterVec(opts prometheus.CounterOpts, labels []string, maxSeries int) *CappedCounterVec {
+func (c *Cap) NewCounterVec(opts prometheus.CounterOpts, labels []string, capOpts CapOpts) *CappedCounterVec {
 	cv := prometheus.NewCounterVec(opts, labels)
 	c.reg.MustRegister(cv)
 
 	return &CappedCounterVec{
 		counterVec: cv,
-		lim:        newLimiter(opts.Name, maxSeries, c.cappedTotal),
+		lim:        newLimiter(opts.Name, capOpts.MaxSeries, c.cappedTotal),
 	}
 }
 

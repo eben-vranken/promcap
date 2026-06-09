@@ -7,13 +7,13 @@ type CappedGaugeVec struct {
 	lim      *limiter
 }
 
-func (c *Cap) NewGaugeVec(opts prometheus.GaugeOpts, labels []string, maxSeries int) *CappedGaugeVec {
+func (c *Cap) NewGaugeVec(opts prometheus.GaugeOpts, labels []string, capOpts CapOpts) *CappedGaugeVec {
 	gv := prometheus.NewGaugeVec(opts, labels)
 	c.reg.MustRegister(gv)
 
 	return &CappedGaugeVec{
 		gaugeVec: gv,
-		lim:      newLimiter(opts.Name, maxSeries, c.cappedTotal),
+		lim:      newLimiter(opts.Name, capOpts.MaxSeries, c.cappedTotal),
 	}
 }
 

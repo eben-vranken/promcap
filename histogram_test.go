@@ -11,7 +11,7 @@ func TestSuccesfulHistogramVecInit(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	regWrap := Wrap(reg)
 
-	cv := regWrap.NewHistogramVec(prometheus.HistogramOpts{Name: "request_total"}, []string{"user"}, 2)
+	cv := regWrap.NewHistogramVec(prometheus.HistogramOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 2})
 	cv.WithLabelValues("a").Observe(1)
 	cv.WithLabelValues("b").Observe(1)
 	cv.WithLabelValues("c").Observe(1)
