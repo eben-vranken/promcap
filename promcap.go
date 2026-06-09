@@ -2,6 +2,7 @@ package promcap
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -30,10 +31,14 @@ func Wrap(reg prometheus.Registerer) *Cap {
 type CappedCounterVec struct {
 	counterVec *prometheus.CounterVec
 	maxSeries  int
+	mu         sync.Mutex
 	seen       map[string]struct{}
 }
 
 func (ccv *CappedCounterVec) WithLabelValues(lvs ...string) prometheus.Counter {
+	ccv.mu.Lock()
+	defer ccv.mu.Unlock()
+
 	key := strings.Join(lvs, "\xff")
 
 	_, ok := ccv.seen[key]
