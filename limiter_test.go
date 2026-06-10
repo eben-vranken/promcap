@@ -141,3 +141,15 @@ func TestLimiterMultiLabelPreservesAllowed(t *testing.T) {
 		t.Errorf("Delete did not resolve: got %q, want %q", gotPost[0], overflowValue)
 	}
 }
+
+func TestLimiterOrderPanicsOnMissingLabel(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Errorf("expected panic for missing label, got none")
+		}
+	}()
+
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"user"}, CapOpts{MaxSeries: 1}, meta)
+	lim.order(prometheus.Labels{})
+}
