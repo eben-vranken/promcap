@@ -1,6 +1,8 @@
 package promcap
 
 import (
+	"errors"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -17,7 +19,14 @@ func Wrap(reg prometheus.Registerer) *Cap {
 		cappedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{Name: "promcap_series_capped_total", Help: "Total number of observations collapsed in the overflow series, by metric"}, []string{"metric"}),
 	}
 
-	reg.MustRegister(c.cappedTotal)
+	var are prometheus.AlreadyRegisteredError
+	err := reg.Register(c.cappedTotal)
+
+	if errors.As(err, &are) {
+		c.cappedTotal = are.ExistingCollector.(*prometheus.CounterVec)
+	} else if err != nil {
+		panic(err)
+	}
 
 	return c
 }
