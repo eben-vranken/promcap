@@ -31,3 +31,21 @@ func TestSuccesfulCounterVecInit(t *testing.T) {
 		t.Errorf("Overflow values got %v, want %v", testutil.ToFloat64(cv.WithLabelValues(overflowValue)), 2)
 	}
 }
+
+func TestCounterVecAdmittedKeepsRecordingAfterCap(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 1})
+	cv.WithLabelValues("a").Inc()
+	cv.WithLabelValues("b").Inc()
+	cv.WithLabelValues("a").Inc()
+
+	if testutil.ToFloat64(cv.WithLabelValues("a")) != 2 {
+		t.Errorf("Label A values got %v, want %v", testutil.ToFloat64(cv.WithLabelValues("a")), 2)
+	}
+
+	if testutil.ToFloat64(cv.WithLabelValues(overflowValue)) != 1 {
+		t.Errorf("Overflow values got %v, want %v", testutil.ToFloat64(cv.WithLabelValues(overflowValue)), 1)
+	}
+}
