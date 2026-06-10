@@ -177,3 +177,23 @@ func TestLimiterEvictsLeastRecentlyUsed(t *testing.T) {
 		t.Errorf("least-recently-used series b was not evicted")
 	}
 }
+
+func TestLimiterAllowedLabelSurvivesUserOverflow(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"method", "user"}, CapOpts{MaxSeries: 1, Allow: map[string][]string{"method": {"GET"}}}, meta)
+
+	lim.resolve([]string{"GET", "alice"})
+	got := lim.resolve([]string{"GET", "bob"})
+
+	if got[0] != "GET" {
+		t.Errorf("Get did not resolve: got %q, want %q", got[0], "GET")
+	}
+
+	if got[1] != overflowValue {
+		t.Errorf("user did not collapse: got %q, want %q", got[1], overflowValue)
+	}
+
+	if testutil.ToFloat64(meta.WithLabelValues("test_metric")) != 1 {
+		t.Errorf("series capped total: got %f, want %d", testutil.ToFloat64(meta.WithLabelValues("test_metric")), 1)
+	}
+}
