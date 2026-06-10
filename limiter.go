@@ -10,16 +10,16 @@ import (
 )
 
 type limiter struct {
-	maxSeries  int
-	mu         sync.Mutex
-	seen       map[string]*list.Element
-	name       string
-	meta       *prometheus.CounterVec
-	labelNames []string
-	allow      map[string]map[string]struct{}
-	lru        *list.List
-	evict      bool
-	onEvict    func(lvs []string)
+	maxSeries   int
+	mu          sync.Mutex
+	seen        map[string]*list.Element
+	name        string
+	metaCounter prometheus.Counter
+	labelNames  []string
+	allow       map[string]map[string]struct{}
+	lru         *list.List
+	evict       bool
+	onEvict     func(lvs []string)
 }
 
 type lruEntry struct {
@@ -56,14 +56,15 @@ func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus
 	}
 
 	return &limiter{
-		maxSeries:  opts.MaxSeries,
-		seen:       make(map[string]*list.Element),
-		name:       name,
-		meta:       meta,
-		labelNames: labelNames,
-		allow:      allowSet,
-		lru:        list.New(),
-		evict:      opts.Evict,
+		maxSeries:   opts.MaxSeries,
+		seen:        make(map[string]*list.Element),
+		name:        name,
+		meta:        meta,
+		metaCounter: meta.WithLabelValues(name),
+		labelNames:  labelNames,
+		allow:       allowSet,
+		lru:         list.New(),
+		evict:       opts.Evict,
 	}
 }
 
@@ -106,7 +107,7 @@ func (lim *limiter) resolve(lvs []string) []string {
 }
 
 func (lim *limiter) overflow(lvs []string) []string {
-	lim.meta.WithLabelValues(lim.name).Inc()
+	lim.metaCounter.Inc()
 
 	out := make([]string, len(lvs))
 	collapsedAny := false
