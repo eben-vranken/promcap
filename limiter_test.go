@@ -102,3 +102,28 @@ func TestLimiterAllowConsumesBudget(t *testing.T) {
 		t.Errorf("Post did not resolve: got %q, want %q", gotPost[0], overflowValue)
 	}
 }
+
+func TestLimiterMultiLabelPreservesAllowed(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"method", "user"}, CapOpts{MaxSeries: 1, Allow: map[string][]string{"method": {"GET", "POST"}}}, meta)
+
+	gotGet := lim.resolve([]string{"GET", "alice"})
+	gotPost := lim.resolve([]string{"POST", "bob"})
+	gotDelete := lim.resolve([]string{"DELETE", "carol"})
+
+	if gotGet[0] != "GET" {
+		t.Errorf("Get did not resolve: got %q, want %q", gotGet[0], "GET")
+	}
+
+	if gotPost[0] != "POST" {
+		t.Errorf("Post did not resolve: got %q, want %q", gotPost[0], "POST")
+	}
+
+	if gotPost[1] != overflowValue {
+		t.Errorf("Post did not resolve: got %q, want %q", gotPost[1], overflowValue)
+	}
+
+	if gotDelete[0] != overflowValue {
+		t.Errorf("Delete did not resolve: got %q, want %q", gotPost[0], overflowValue)
+	}
+}

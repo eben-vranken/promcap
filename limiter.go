@@ -70,7 +70,7 @@ func (lim *limiter) resolve(lvs []string) []string {
 		_, allowed := set[lvs[i]]
 
 		if !allowed {
-			return lim.overflow(len(lvs))
+			return lim.overflow(lvs)
 		}
 	}
 
@@ -87,17 +87,36 @@ func (lim *limiter) resolve(lvs []string) []string {
 		return lvs
 	}
 
-	return lim.overflow(len(lvs))
+	return lim.overflow(lvs)
 }
 
-func (lim *limiter) overflow(n int) []string {
+func (lim *limiter) overflow(lvs []string) []string {
 	lim.meta.WithLabelValues(lim.name).Inc()
 
-	overflow := make([]string, n)
+	out := make([]string, len(lvs))
+	collapsedAny := false
 
-	for i := range overflow {
-		overflow[i] = overflowValue
+	for i, name := range lim.labelNames {
+		set, ok := lim.allow[name]
+
+		if ok {
+			_, allowed := set[lvs[i]]
+
+			if allowed {
+				out[i] = lvs[i]
+				continue
+			}
+		}
+
+		out[i] = overflowValue
+		collapsedAny = true
 	}
 
-	return overflow
+	if !collapsedAny {
+		for i := range out {
+			out[i] = overflowValue
+		}
+	}
+
+	return out
 }
