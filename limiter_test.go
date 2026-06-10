@@ -64,3 +64,16 @@ func TestLimiterResolveAllowList(t *testing.T) {
 		t.Errorf("Delete did not resolve: got %q, want %q", gotDelete[0], overflowValue)
 	}
 }
+
+func TestLimiterRejectsUnknownAllowList(t *testing.T) {
+	defer func() {
+		r := recover()
+
+		if r == nil {
+			t.Errorf("expected panic for unknown Allow key, got none")
+		}
+	}()
+
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	_ = newLimiter("test_metric", []string{"method"}, CapOpts{MaxSeries: 100, Allow: map[string][]string{"typo": {"GET", "POST"}}}, meta)
+}
