@@ -30,6 +30,10 @@ func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus
 		allowSet[label] = permitted
 	}
 
+	if opts.MaxSeries <= 0 {
+		opts.MaxSeries = defaultMaxSeries
+	}
+
 	return &limiter{
 		maxSeries:  opts.MaxSeries,
 		seen:       make(map[string]struct{}),
