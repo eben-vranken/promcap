@@ -153,3 +153,27 @@ func TestLimiterOrderPanicsOnMissingLabel(t *testing.T) {
 	lim := newLimiter("test_metric", []string{"user"}, CapOpts{MaxSeries: 1}, meta)
 	lim.order(prometheus.Labels{})
 }
+
+func TestLimiterEvictsLeastRecentlyUsed(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"user"}, CapOpts{MaxSeries: 2, Evict: true}, meta)
+
+	lim.resolve([]string{"a"})
+	lim.resolve([]string{"b"})
+
+	lim.resolve([]string{"a"})
+
+	lim.resolve([]string{"c"})
+
+	if _, ok := lim.seen["a"]; !ok {
+		t.Errorf("recently-used series a was evicted")
+	}
+
+	if _, ok := lim.seen["c"]; !ok {
+		t.Errorf("newly admitted series c is missing")
+	}
+
+	if _, ok := lim.seen["b"]; ok {
+		t.Errorf("least-recently-used series b was not evicted")
+	}
+}
