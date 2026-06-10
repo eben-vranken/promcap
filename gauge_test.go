@@ -48,3 +48,30 @@ func TestGaugeVecWith(t *testing.T) {
 		t.Errorf("Overflow values got %v, want %v", testutil.ToFloat64(cv.WithLabelValues(overflowValue)), 1)
 	}
 }
+
+func TestGaugeVecGetMetricWith(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewGaugeVec(prometheus.GaugeOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 1})
+
+	a, err := cv.GetMetricWith(prometheus.Labels{"user": "a"})
+	if err != nil {
+		t.Fatalf("GetMetricWith returned error: %v", err)
+	}
+	a.Inc()
+
+	b, err := cv.GetMetricWithLabelValues("b")
+	if err != nil {
+		t.Fatalf("GetMetricWithLabelValues returned error: %v", err)
+	}
+	b.Inc()
+
+	if testutil.ToFloat64(a) != 1 {
+		t.Errorf("admitted series got %v, want %v", testutil.ToFloat64(a), 1)
+	}
+
+	if testutil.ToFloat64(cv.WithLabelValues(overflowValue)) != 1 {
+		t.Errorf("overflow got %v, want %v", testutil.ToFloat64(cv.WithLabelValues(overflowValue)), 1)
+	}
+}

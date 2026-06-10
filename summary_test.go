@@ -51,3 +51,26 @@ func TestSummaryVecWith(t *testing.T) {
 			testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 1)
 	}
 }
+
+func TestSummaryVecGetMetricWith(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewSummaryVec(prometheus.SummaryOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 1})
+
+	a, err := cv.GetMetricWith(prometheus.Labels{"user": "a"})
+	if err != nil {
+		t.Fatalf("GetMetricWith returned error: %v", err)
+	}
+	a.Observe(1)
+
+	b, err := cv.GetMetricWithLabelValues("b")
+	if err != nil {
+		t.Fatalf("GetMetricWithLabelValues returned error: %v", err)
+	}
+	b.Observe(1)
+
+	if testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")) != 1 {
+		t.Errorf("overflow got %v, want %v", testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 1)
+	}
+}

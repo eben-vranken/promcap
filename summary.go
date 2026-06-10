@@ -31,3 +31,11 @@ func (sumv *CappedSummaryVec) With(labels prometheus.Labels) prometheus.Observer
 
 func (sumv *CappedSummaryVec) Describe(ch chan<- *prometheus.Desc) { sumv.summaryVec.Describe(ch) }
 func (sumv *CappedSummaryVec) Collect(ch chan<- prometheus.Metric) { sumv.summaryVec.Collect(ch) }
+
+func (sumv *CappedSummaryVec) GetMetricWithLabelValues(lvs ...string) (prometheus.Observer, error) {
+	return sumv.summaryVec.GetMetricWithLabelValues(sumv.lim.resolve(lvs)...)
+}
+
+func (sumv *CappedSummaryVec) GetMetricWith(labels prometheus.Labels) (prometheus.Observer, error) {
+	return sumv.summaryVec.GetMetricWithLabelValues(sumv.lim.resolve(sumv.lim.order(labels))...)
+}

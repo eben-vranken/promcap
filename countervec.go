@@ -31,3 +31,11 @@ func (ccv *CappedCounterVec) With(labels prometheus.Labels) prometheus.Counter {
 
 func (ccv *CappedCounterVec) Describe(ch chan<- *prometheus.Desc) { ccv.counterVec.Describe(ch) }
 func (ccv *CappedCounterVec) Collect(ch chan<- prometheus.Metric) { ccv.counterVec.Collect(ch) }
+
+func (ccv *CappedCounterVec) GetMetricWithLabelValues(lvs ...string) (prometheus.Counter, error) {
+	return ccv.counterVec.GetMetricWithLabelValues(ccv.lim.resolve(lvs)...)
+}
+
+func (ccv *CappedCounterVec) GetMetricWith(labels prometheus.Labels) (prometheus.Counter, error) {
+	return ccv.counterVec.GetMetricWithLabelValues(ccv.lim.resolve(ccv.lim.order(labels))...)
+}

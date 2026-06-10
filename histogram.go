@@ -32,3 +32,11 @@ func (hgv *CappedHistogramVec) With(labels prometheus.Labels) prometheus.Observe
 
 func (hgv *CappedHistogramVec) Describe(ch chan<- *prometheus.Desc) { hgv.histogramVec.Describe(ch) }
 func (hgv *CappedHistogramVec) Collect(ch chan<- prometheus.Metric) { hgv.histogramVec.Collect(ch) }
+
+func (hgv *CappedHistogramVec) GetMetricWithLabelValues(lvs ...string) (prometheus.Observer, error) {
+	return hgv.histogramVec.GetMetricWithLabelValues(hgv.lim.resolve(lvs)...)
+}
+
+func (hgv *CappedHistogramVec) GetMetricWith(labels prometheus.Labels) (prometheus.Observer, error) {
+	return hgv.histogramVec.GetMetricWithLabelValues(hgv.lim.resolve(hgv.lim.order(labels))...)
+}

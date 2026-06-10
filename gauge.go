@@ -31,3 +31,11 @@ func (cgv *CappedGaugeVec) With(labels prometheus.Labels) prometheus.Gauge {
 
 func (cgv *CappedGaugeVec) Describe(ch chan<- *prometheus.Desc) { cgv.gaugeVec.Describe(ch) }
 func (cgv *CappedGaugeVec) Collect(ch chan<- prometheus.Metric) { cgv.gaugeVec.Collect(ch) }
+
+func (cgv *CappedGaugeVec) GetMetricWithLabelValues(lvs ...string) (prometheus.Gauge, error) {
+	return cgv.gaugeVec.GetMetricWithLabelValues(cgv.lim.resolve(lvs)...)
+}
+
+func (cgv *CappedGaugeVec) GetMetricWith(labels prometheus.Labels) (prometheus.Gauge, error) {
+	return cgv.gaugeVec.GetMetricWithLabelValues(cgv.lim.resolve(cgv.lim.order(labels))...)
+}
