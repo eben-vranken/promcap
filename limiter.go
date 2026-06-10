@@ -120,3 +120,15 @@ func (lim *limiter) overflow(lvs []string) []string {
 
 	return out
 }
+
+func (lim *limiter) order(labels prometheus.Labels) []string {
+	lvs := make([]string, len(lim.labelNames))
+	for i, name := range lim.labelNames {
+		v, ok := labels[name]
+		if !ok {
+			panic(fmt.Sprintf("promcap: missing label %q for metric %q", name, lim.name))
+		}
+		lvs[i] = v
+	}
+	return lvs
+}

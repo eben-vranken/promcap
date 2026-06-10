@@ -20,3 +20,7 @@ func (c *Cap) NewCounterVec(opts prometheus.CounterOpts, labels []string, capOpt
 func (ccv *CappedCounterVec) WithLabelValues(lvs ...string) prometheus.Counter {
 	return ccv.counterVec.WithLabelValues(ccv.lim.resolve(lvs)...)
 }
+
+func (ccv *CappedCounterVec) With(labels prometheus.Labels) prometheus.Counter {
+	return ccv.counterVec.WithLabelValues(ccv.lim.resolve(ccv.lim.order(labels))...)
+}
