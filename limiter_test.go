@@ -25,6 +25,20 @@ func TestCounterVecConcurrentAccess(t *testing.T) {
 	}
 
 	wg.Wait()
+
+	count, err := testutil.GatherAndCount(reg, "request_total")
+
+	if err != nil {
+		t.Fatalf("Fatal error: %v", err)
+	}
+
+	if count != 101 {
+		t.Errorf("Gather and count got %d, want %d", count, 101)
+	}
+
+	if testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")) != 900 {
+		t.Errorf("Overflow values got %v, want %v", testutil.ToFloat64(cv.WithLabelValues("request_total")), 900)
+	}
 }
 
 func TestLimiterResolve(t *testing.T) {
