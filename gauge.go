@@ -39,3 +39,8 @@ func (cgv *CappedGaugeVec) GetMetricWithLabelValues(lvs ...string) (prometheus.G
 func (cgv *CappedGaugeVec) GetMetricWith(labels prometheus.Labels) (prometheus.Gauge, error) {
 	return cgv.gaugeVec.GetMetricWithLabelValues(cgv.lim.resolve(cgv.lim.order(labels))...)
 }
+
+func (cgv *CappedGaugeVec) Reset() {
+	cgv.gaugeVec.Reset()
+	cgv.lim.reset()
+}

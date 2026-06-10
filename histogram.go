@@ -40,3 +40,8 @@ func (hgv *CappedHistogramVec) GetMetricWithLabelValues(lvs ...string) (promethe
 func (hgv *CappedHistogramVec) GetMetricWith(labels prometheus.Labels) (prometheus.Observer, error) {
 	return hgv.histogramVec.GetMetricWithLabelValues(hgv.lim.resolve(hgv.lim.order(labels))...)
 }
+
+func (hgv *CappedHistogramVec) Reset() {
+	hgv.histogramVec.Reset()
+	hgv.lim.reset()
+}

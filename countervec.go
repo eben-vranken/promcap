@@ -39,3 +39,8 @@ func (ccv *CappedCounterVec) GetMetricWithLabelValues(lvs ...string) (prometheus
 func (ccv *CappedCounterVec) GetMetricWith(labels prometheus.Labels) (prometheus.Counter, error) {
 	return ccv.counterVec.GetMetricWithLabelValues(ccv.lim.resolve(ccv.lim.order(labels))...)
 }
+
+func (ccv *CappedCounterVec) Reset() {
+	ccv.counterVec.Reset()
+	ccv.lim.reset()
+}

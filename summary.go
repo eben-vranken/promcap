@@ -39,3 +39,8 @@ func (sumv *CappedSummaryVec) GetMetricWithLabelValues(lvs ...string) (prometheu
 func (sumv *CappedSummaryVec) GetMetricWith(labels prometheus.Labels) (prometheus.Observer, error) {
 	return sumv.summaryVec.GetMetricWithLabelValues(sumv.lim.resolve(sumv.lim.order(labels))...)
 }
+
+func (sumv *CappedSummaryVec) Reset() {
+	sumv.summaryVec.Reset()
+	sumv.lim.reset()
+}

@@ -132,3 +132,9 @@ func (lim *limiter) order(labels prometheus.Labels) []string {
 	}
 	return lvs
 }
+
+func (lim *limiter) reset() {
+	lim.mu.Lock()
+	defer lim.mu.Unlock()
+	lim.seen = make(map[string]struct{})
+}
