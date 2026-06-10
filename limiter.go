@@ -1,6 +1,7 @@
 package promcap
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 
@@ -19,8 +20,19 @@ type limiter struct {
 
 func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus.CounterVec) *limiter {
 	allowSet := make(map[string]map[string]struct{})
+	lookupSet := make(map[string]struct{})
+
+	for _, label := range labelNames {
+		lookupSet[label] = struct{}{}
+	}
 
 	for label, values := range opts.Allow {
+		_, ok := lookupSet[label]
+
+		if !ok {
+			panic(fmt.Sprintf("promcap: Allow key %q is not a label of metric %q", label, name))
+		}
+
 		permitted := make(map[string]struct{})
 
 		for _, value := range values {
