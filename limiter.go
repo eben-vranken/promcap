@@ -1,6 +1,7 @@
 package promcap
 
 import (
+	"container/list"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,11 +12,19 @@ import (
 type limiter struct {
 	maxSeries  int
 	mu         sync.Mutex
-	seen       map[string]struct{}
+	seen       map[string]*list.Element
 	name       string
 	meta       *prometheus.CounterVec
 	labelNames []string
 	allow      map[string]map[string]struct{}
+	lru        *list.List
+	evict      bool
+	onEvict    func(lvs []string)
+}
+
+type lruEntry struct {
+	key string
+	lvs []string
 }
 
 func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus.CounterVec) *limiter {
@@ -48,11 +57,13 @@ func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus
 
 	return &limiter{
 		maxSeries:  opts.MaxSeries,
-		seen:       make(map[string]struct{}),
+		seen:       make(map[string]*list.Element),
 		name:       name,
 		meta:       meta,
 		labelNames: labelNames,
 		allow:      allowSet,
+		lru:        list.New(),
+		evict:      opts.Evict,
 	}
 }
 
@@ -76,18 +87,22 @@ func (lim *limiter) resolve(lvs []string) []string {
 
 	key := strings.Join(lvs, "\xff")
 
-	_, ok := lim.seen[key]
-
-	if ok {
+	if elem, ok := lim.seen[key]; ok {
+		lim.lru.MoveToFront(elem)
 		return lvs
 	}
 
-	if len(lim.seen) < lim.maxSeries {
-		lim.seen[key] = struct{}{}
-		return lvs
+	if len(lim.seen) >= lim.maxSeries {
+		if !lim.evict {
+			return lim.overflow(lvs)
+		}
+		lim.evictOldest()
 	}
 
-	return lim.overflow(lvs)
+	elem := lim.lru.PushFront(lruEntry{key: key, lvs: lvs})
+	lim.seen[key] = elem
+	return lvs
+
 }
 
 func (lim *limiter) overflow(lvs []string) []string {
@@ -136,5 +151,19 @@ func (lim *limiter) order(labels prometheus.Labels) []string {
 func (lim *limiter) reset() {
 	lim.mu.Lock()
 	defer lim.mu.Unlock()
-	lim.seen = make(map[string]struct{})
+	lim.seen = make(map[string]*list.Element)
+	lim.lru = list.New()
+}
+
+func (lim *limiter) evictOldest() {
+	back := lim.lru.Back()
+	if back == nil {
+		return
+	}
+	ent := back.Value.(lruEntry)
+	lim.lru.Remove(back)
+	delete(lim.seen, ent.key)
+	if lim.onEvict != nil {
+		lim.onEvict(ent.lvs)
+	}
 }
