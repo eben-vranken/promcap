@@ -77,3 +77,12 @@ func TestLimiterRejectsUnknownAllowList(t *testing.T) {
 	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
 	_ = newLimiter("test_metric", []string{"method"}, CapOpts{MaxSeries: 100, Allow: map[string][]string{"typo": {"GET", "POST"}}}, meta)
 }
+
+func TestNewLimiterWithNoMaxSeries(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"method"}, CapOpts{}, meta)
+
+	if lim.maxSeries != defaultMaxSeries {
+		t.Errorf("omitted max series was not set to default value, got %d, expected %d", lim.maxSeries, defaultMaxSeries)
+	}
+}
