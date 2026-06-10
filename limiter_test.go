@@ -99,6 +99,6 @@ func TestLimiterAllowConsumesBudget(t *testing.T) {
 	}
 
 	if gotPost[0] != overflowValue {
-		t.Errorf("Delete did not resolve: got %q, want %q", gotPost[0], overflowValue)
+		t.Errorf("Post did not resolve: got %q, want %q", gotPost[0], overflowValue)
 	}
 }
