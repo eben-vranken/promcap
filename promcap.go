@@ -1,3 +1,8 @@
+// Package promcap wraps Prometheus *Vec metrics with a cardinality cap,
+// collapsing label combinations beyond a configured limit into an overflow series.
+//
+// The label value "__overflow__" is reserved: any real label value equal to it
+// will silently merge into the overflow bucket.
 package promcap
 
 import (
@@ -6,6 +11,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+// overflowValue is the reserved label value that collapsed series carry.
+// A real label value equal to it will silently merge into the overflow bucket.
 const overflowValue = "__overflow__"
 
 type Cap struct {
