@@ -59,7 +59,6 @@ func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus
 		maxSeries:   opts.MaxSeries,
 		seen:        make(map[string]*list.Element),
 		name:        name,
-		meta:        meta,
 		metaCounter: meta.WithLabelValues(name),
 		labelNames:  labelNames,
 		allow:       allowSet,
