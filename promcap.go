@@ -14,7 +14,7 @@ type Cap struct {
 func Wrap(reg prometheus.Registerer) *Cap {
 	c := &Cap{
 		reg:         reg,
-		cappedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{Name: "promcap_series_capped_total", Help: "Number of label combinations collapsed into the overflow series, by metric"}, []string{"metric"}),
+		cappedTotal: prometheus.NewCounterVec(prometheus.CounterOpts{Name: "promcap_series_capped_total", Help: "Total number of observations collapsed in the overflow series, by metric"}, []string{"metric"}),
 	}
 
 	reg.MustRegister(c.cappedTotal)
