@@ -20,3 +20,7 @@ func (c *Cap) NewHistogramVec(opts prometheus.HistogramOpts, labels []string, ca
 func (hgv *CappedHistogramVec) WithLabelValues(lvs ...string) prometheus.Observer {
 	return hgv.histogramVec.WithLabelValues(hgv.lim.resolve(lvs)...)
 }
+
+func (hgv *CappedHistogramVec) With(labels prometheus.Labels) prometheus.Observer {
+	return hgv.histogramVec.WithLabelValues(hgv.lim.resolve(hgv.lim.order(labels))...)
+}

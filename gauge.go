@@ -20,3 +20,7 @@ func (c *Cap) NewGaugeVec(opts prometheus.GaugeOpts, labels []string, capOpts Ca
 func (cgv *CappedGaugeVec) WithLabelValues(lvs ...string) prometheus.Gauge {
 	return cgv.gaugeVec.WithLabelValues(cgv.lim.resolve(lvs)...)
 }
+
+func (cgv *CappedGaugeVec) With(labels prometheus.Labels) prometheus.Gauge {
+	return cgv.gaugeVec.WithLabelValues(cgv.lim.resolve(cgv.lim.order(labels))...)
+}
