@@ -99,7 +99,7 @@ func (lim *limiter) resolve(lvs []string) []string {
 		lim.evictOldest()
 	}
 
-	elem := lim.lru.PushFront(lruEntry{key: key, lvs: lvs})
+	elem := lim.lru.PushFront(lruEntry{key: key, lvs: append([]string(nil), lvs...)})
 	lim.seen[key] = elem
 	return lvs
 
