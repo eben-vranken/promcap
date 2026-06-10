@@ -16,6 +16,7 @@ func (c *Cap) NewHistogramVec(opts prometheus.HistogramOpts, labels []string, ca
 		histogramVec: hgv,
 		lim:          newLimiter(opts.Name, labels, capOpts, c.cappedTotal),
 	}
+	chgv.lim.onEvict = func(lvs []string) { hgv.DeleteLabelValues(lvs...) }
 
 	c.reg.MustRegister(chgv)
 

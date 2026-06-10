@@ -15,9 +15,9 @@ func (c *Cap) NewCounterVec(opts prometheus.CounterOpts, labels []string, capOpt
 		counterVec: cv,
 		lim:        newLimiter(opts.Name, labels, capOpts, c.cappedTotal),
 	}
+	ccv.lim.onEvict = func(lvs []string) { cv.DeleteLabelValues(lvs...) }
 
 	c.reg.MustRegister(ccv)
-
 	return ccv
 }
 

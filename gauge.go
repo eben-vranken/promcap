@@ -16,6 +16,7 @@ func (c *Cap) NewGaugeVec(opts prometheus.GaugeOpts, labels []string, capOpts Ca
 		gaugeVec: gv,
 		lim:      newLimiter(opts.Name, labels, capOpts, c.cappedTotal),
 	}
+	cgv.lim.onEvict = func(lvs []string) { gv.DeleteLabelValues(lvs...) }
 
 	c.reg.MustRegister(cgv)
 	return cgv

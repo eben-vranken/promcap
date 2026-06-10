@@ -16,6 +16,7 @@ func (c *Cap) NewSummaryVec(opts prometheus.SummaryOpts, labels []string, capOpt
 		summaryVec: sumv,
 		lim:        newLimiter(opts.Name, labels, capOpts, c.cappedTotal),
 	}
+	csumv.lim.onEvict = func(lvs []string) { sumv.DeleteLabelValues(lvs...) }
 
 	c.reg.MustRegister(csumv)
 	return csumv
