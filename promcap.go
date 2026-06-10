@@ -3,6 +3,11 @@
 //
 // The label value "__overflow__" is reserved: any real label value equal to it
 // will silently merge into the overflow bucket.
+//
+// Capped: WithLabelValues, With, GetMetricWith, GetMetricWithLabelValues, Reset.
+//
+// Not yet wrapped: CurryWith, Delete, DeleteLabelValues. Code relying on these
+// is not yet a drop-in replacement.
 package promcap
 
 import (
