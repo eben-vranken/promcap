@@ -86,3 +86,19 @@ func TestNewLimiterWithNoMaxSeries(t *testing.T) {
 		t.Errorf("omitted max series was not set to default value, got %d, expected %d", lim.maxSeries, defaultMaxSeries)
 	}
 }
+
+func TestLimiterAllowConsumesBudget(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"method"}, CapOpts{MaxSeries: 1, Allow: map[string][]string{"method": {"GET", "POST"}}}, meta)
+
+	gotGet := lim.resolve([]string{"GET"})
+	gotPost := lim.resolve([]string{"POST"})
+
+	if gotGet[0] != "GET" {
+		t.Errorf("Get did not resolve: got %q, want %q", gotGet[0], "GET")
+	}
+
+	if gotPost[0] != overflowValue {
+		t.Errorf("Delete did not resolve: got %q, want %q", gotPost[0], overflowValue)
+	}
+}
