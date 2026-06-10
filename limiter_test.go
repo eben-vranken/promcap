@@ -197,3 +197,36 @@ func TestLimiterAllowedLabelSurvivesUserOverflow(t *testing.T) {
 		t.Errorf("series capped total: got %f, want %d", testutil.ToFloat64(meta.WithLabelValues("test_metric")), 1)
 	}
 }
+
+func TestCounterVecParallelInvariants(t *testing.T) {
+	maxSeries := 100
+	const observations = 1000
+
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: maxSeries})
+	wg := sync.WaitGroup{}
+
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			cv.WithLabelValues(strconv.Itoa(i)).Inc()
+		}()
+	}
+
+	wg.Wait()
+
+	gathered, _ := testutil.GatherAndCount(reg, "request_total")
+	capped := testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total"))
+	admitted := gathered - 1
+
+	if gathered > maxSeries+1 {
+		t.Errorf("Gather and count got %d, want %d", gathered, maxSeries+1)
+	}
+
+	if capped != float64(observations-admitted) {
+		t.Errorf("Gather and count got %f, want %d", capped, observations-admitted)
+	}
+}
