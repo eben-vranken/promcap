@@ -7,14 +7,18 @@ type CappedSummaryVec struct {
 	lim        *limiter
 }
 
+var _ prometheus.Collector = (*CappedSummaryVec)(nil)
+
 func (c *Cap) NewSummaryVec(opts prometheus.SummaryOpts, labels []string, capOpts CapOpts) *CappedSummaryVec {
 	sumv := prometheus.NewSummaryVec(opts, labels)
-	c.reg.MustRegister(sumv)
 
-	return &CappedSummaryVec{
+	csumv := &CappedSummaryVec{
 		summaryVec: sumv,
 		lim:        newLimiter(opts.Name, labels, capOpts, c.cappedTotal),
 	}
+
+	c.reg.MustRegister(csumv)
+	return csumv
 }
 
 func (sumv *CappedSummaryVec) WithLabelValues(lvs ...string) prometheus.Observer {
@@ -24,3 +28,6 @@ func (sumv *CappedSummaryVec) WithLabelValues(lvs ...string) prometheus.Observer
 func (sumv *CappedSummaryVec) With(labels prometheus.Labels) prometheus.Observer {
 	return sumv.summaryVec.WithLabelValues(sumv.lim.resolve(sumv.lim.order(labels))...)
 }
+
+func (sumv *CappedSummaryVec) Describe(ch chan<- *prometheus.Desc) { sumv.summaryVec.Describe(ch) }
+func (sumv *CappedSummaryVec) Collect(ch chan<- prometheus.Metric) { sumv.summaryVec.Collect(ch) }
