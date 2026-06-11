@@ -74,3 +74,31 @@ func TestHistogramVecGetMetricWith(t *testing.T) {
 		t.Errorf("overflow got %v, want %v", testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 1)
 	}
 }
+
+func TestHistogramVecResetFreesBudget(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewHistogramVec(prometheus.HistogramOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 1})
+	cv.WithLabelValues("a").Observe(1)
+	cv.WithLabelValues("b").Observe(1)
+
+	cv.Reset()
+
+	cv.WithLabelValues("c").Observe(1)
+
+	count, err := testutil.GatherAndCount(reg, "request_total")
+
+	if err != nil {
+		t.Fatalf("Fatal error: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Gather and Count got %v, want %v", count, 1)
+	}
+
+	if testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")) != 1 {
+		t.Errorf("overflow total got %v, want %v",
+			testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 1)
+	}
+}
