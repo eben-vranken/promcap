@@ -23,8 +23,9 @@ type limiter struct {
 }
 
 type lruEntry struct {
-	key string
-	lvs []string
+	key      string
+	lvs      []string
+	accessed bool
 }
 
 func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus.CounterVec) *limiter {
@@ -88,7 +89,7 @@ func (lim *limiter) resolve(lvs []string) []string {
 	key := strings.Join(lvs, "\xff")
 
 	if elem, ok := lim.seen[key]; ok {
-		lim.lru.MoveToFront(elem)
+		elem.Value.(*lruEntry).accessed = true
 		return lvs
 	}
 
@@ -98,8 +99,7 @@ func (lim *limiter) resolve(lvs []string) []string {
 		}
 		lim.evictOldest()
 	}
-
-	elem := lim.lru.PushFront(lruEntry{key: key, lvs: append([]string(nil), lvs...)})
+	elem := lim.lru.PushFront(&lruEntry{key: key, lvs: append([]string(nil), lvs...)})
 	lim.seen[key] = elem
 	return lvs
 
@@ -156,14 +156,22 @@ func (lim *limiter) reset() {
 }
 
 func (lim *limiter) evictOldest() {
-	back := lim.lru.Back()
-	if back == nil {
+	for {
+		back := lim.lru.Back()
+		if back == nil {
+			return
+		}
+		ent := back.Value.(*lruEntry)
+		if ent.accessed {
+			ent.accessed = false
+			lim.lru.MoveToFront(back)
+			continue
+		}
+		lim.lru.Remove(back)
+		delete(lim.seen, ent.key)
+		if lim.onEvict != nil {
+			lim.onEvict(ent.lvs)
+		}
 		return
-	}
-	ent := back.Value.(lruEntry)
-	lim.lru.Remove(back)
-	delete(lim.seen, ent.key)
-	if lim.onEvict != nil {
-		lim.onEvict(ent.lvs)
 	}
 }
