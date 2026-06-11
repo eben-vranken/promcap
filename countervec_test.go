@@ -142,3 +142,74 @@ func TestCounterVecEvictionFreesBudget(t *testing.T) {
 		t.Errorf("series after eviction got %d, want %d", count, 1)
 	}
 }
+
+func TestCounterVecReadmitsEvictedKey(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 1, Evict: true})
+	cv.WithLabelValues("a").Inc()
+	cv.WithLabelValues("b").Inc()
+	cv.WithLabelValues("a").Inc()
+
+	if testutil.ToFloat64(cv.WithLabelValues("a")) != 1 {
+		t.Errorf("evicting admit: got %v, want %v", testutil.ToFloat64(cv.WithLabelValues("a")), 1)
+	}
+
+	if testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")) != 0 {
+		t.Errorf("Capped total got %f, want %d", testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 0)
+	}
+}
+
+func TestCounterVecEvictMultiLabel(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"method", "user"}, CapOpts{MaxSeries: 1, Evict: true})
+	cv.WithLabelValues("GET", "alice").Inc()
+	cv.WithLabelValues("POST", "bob").Inc()
+
+	count, err := testutil.GatherAndCount(reg, "request_total")
+
+	if err != nil {
+		t.Fatalf("Fatal error: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Gather and count got %d, want %d", count, 1)
+	}
+
+	if testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")) != 0 {
+		t.Errorf("overflow total got %v, want %v",
+			testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 0)
+	}
+
+	if testutil.ToFloat64(cv.WithLabelValues("POST", "bob")) != 1 {
+		t.Errorf("survivor got %v, want %v", testutil.ToFloat64(cv.WithLabelValues("POST", "bob")), 1)
+	}
+}
+
+func TestCounterVecEvictWithAllowList(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewCounterVec(prometheus.CounterOpts{Name: "request_total"}, []string{"method", "user"}, CapOpts{MaxSeries: 1, Allow: map[string][]string{"method": {"GET"}}, Evict: true})
+	cv.WithLabelValues("GET", "alice").Inc()
+	cv.WithLabelValues("POST", "bob").Inc()
+	cv.WithLabelValues("GET", "bob").Inc()
+
+	count, err := testutil.GatherAndCount(reg, "request_total")
+
+	if err != nil {
+		t.Fatalf("Fatal error: %v", err)
+	}
+
+	if count != 2 {
+		t.Errorf("Gather and count got %d, want %d", count, 2)
+	}
+
+	if testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")) != 1 {
+		t.Errorf("overflow total got %v, want %v",
+			testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 1)
+	}
+}
