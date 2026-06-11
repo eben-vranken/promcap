@@ -97,3 +97,25 @@ func TestGaugeVecResetFreesBudget(t *testing.T) {
 			testutil.ToFloat64(regWrap.cappedTotal.WithLabelValues("request_total")), 1)
 	}
 }
+
+func TestGaugeVecEvictionDeletesSeries(t *testing.T) {
+	reg := prometheus.NewRegistry()
+	regWrap := Wrap(reg)
+
+	cv := regWrap.NewGaugeVec(prometheus.GaugeOpts{Name: "request_total"}, []string{"user"}, CapOpts{MaxSeries: 1, Evict: true})
+	cv.WithLabelValues("a").Inc()
+	cv.WithLabelValues("b").Inc()
+
+	count, err := testutil.GatherAndCount(reg, "request_total")
+	if err != nil {
+		t.Fatalf("Fatal error: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("series after eviction got %d, want %d", count, 1)
+	}
+
+	if testutil.ToFloat64(cv.WithLabelValues("b")) != 1 {
+		t.Errorf("survivor got %v, want %v", testutil.ToFloat64(cv.WithLabelValues("b")), 1)
+	}
+}

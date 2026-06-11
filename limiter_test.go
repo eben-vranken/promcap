@@ -230,3 +230,15 @@ func TestCounterVecParallelInvariants(t *testing.T) {
 		t.Errorf("Gather and count got %f, want %d", capped, observations-admitted)
 	}
 }
+
+func TestLimiterEvictOldestOnEmptyIsNoop(t *testing.T) {
+	meta := prometheus.NewCounterVec(prometheus.CounterOpts{Name: "test_metric"}, []string{"metric"})
+	lim := newLimiter("test_metric", []string{"user"}, CapOpts{MaxSeries: 1, Evict: true}, meta)
+
+	// No series admitted yet, so the LRU is empty; evictOldest must return without panicking.
+	lim.evictOldest()
+
+	if len(lim.seen) != 0 {
+		t.Errorf("seen size got %d, want %d", len(lim.seen), 0)
+	}
+}
