@@ -5,9 +5,8 @@
 </p>
 
 <p align="center">
-
   <a href="https://goreportcard.com/report/github.com/eben-vranken/promcap"><img src="https://goreportcard.com/badge/github.com/eben-vranken/promcap" alt="Go Report Card"></a>
-  <a href="https://codecov.io/gh/eben-vranken/trusthook"><img src="https://codecov.io/gh/eben-vranken/trusthook/branch/main/graph/badge.svg" alt="Coverage"></a>
+  <a href="https://codecov.io/gh/eben-vranken/promcap"><img src="https://codecov.io/gh/eben-vranken/promcap/branch/main/graph/badge.svg" alt="Coverage"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License"></a>
 </p>
 
