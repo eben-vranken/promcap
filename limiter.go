@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 type limiter struct {
 	maxSeries   int
-	mu          sync.Mutex
+	mu          sync.RWMutex
 	seen        map[string]*list.Element
 	name        string
 	metaCounter prometheus.Counter
@@ -25,7 +26,7 @@ type limiter struct {
 type lruEntry struct {
 	key      string
 	lvs      []string
-	accessed bool
+	accessed atomic.Bool
 }
 
 func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus.CounterVec) *limiter {
@@ -69,27 +70,31 @@ func newLimiter(name string, labelNames []string, opts CapOpts, meta *prometheus
 }
 
 func (lim *limiter) resolve(lvs []string) []string {
-	lim.mu.Lock()
-	defer lim.mu.Unlock()
+	key := strings.Join(lvs, "\xff")
 
+	lim.mu.RLock()
 	for i, name := range lim.labelNames {
 		set, ok := lim.allow[name]
-
 		if !ok {
 			continue
 		}
-
-		_, allowed := set[lvs[i]]
-
-		if !allowed {
+		if _, allowed := set[lvs[i]]; !allowed {
+			lim.mu.RUnlock()
 			return lim.overflow(lvs)
 		}
 	}
+	if elem, ok := lim.seen[key]; ok {
+		elem.Value.(*lruEntry).accessed.Store(true)
+		lim.mu.RUnlock()
+		return lvs
+	}
+	lim.mu.RUnlock()
 
-	key := strings.Join(lvs, "\xff")
+	lim.mu.Lock()
+	defer lim.mu.Unlock()
 
 	if elem, ok := lim.seen[key]; ok {
-		elem.Value.(*lruEntry).accessed = true
+		elem.Value.(*lruEntry).accessed.Store(true)
 		return lvs
 	}
 
@@ -102,7 +107,6 @@ func (lim *limiter) resolve(lvs []string) []string {
 	elem := lim.lru.PushFront(&lruEntry{key: key, lvs: append([]string(nil), lvs...)})
 	lim.seen[key] = elem
 	return lvs
-
 }
 
 func (lim *limiter) overflow(lvs []string) []string {
@@ -162,8 +166,8 @@ func (lim *limiter) evictOldest() {
 			return
 		}
 		ent := back.Value.(*lruEntry)
-		if ent.accessed {
-			ent.accessed = false
+		if ent.accessed.Load() {
+			ent.accessed.Store(false)
 			lim.lru.MoveToFront(back)
 			continue
 		}

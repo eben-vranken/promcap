@@ -2,7 +2,6 @@ package promcap
 
 import (
 	"strconv"
-	"sync/atomic"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -77,21 +76,20 @@ func BenchmarkResolveParallel(b *testing.B) {
 		[]string{"user"},
 		CapOpts{MaxSeries: 1 << 20},
 	)
-	cv.lim.resolve([]string{"hot"})
 
-	var gid int64
+	const pool = 1024
+	keys := make([][]string, pool)
+	for i := range keys {
+		keys[i] = []string{strconv.Itoa(i)}
+		cv.lim.resolve(keys[i])
+	}
+
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		id := atomic.AddInt64(&gid, 1)
-		prefix := strconv.FormatInt(id, 10) + "-"
 		i := 0
 		for pb.Next() {
-			if i&1 == 0 {
-				cv.lim.resolve([]string{"hot"})
-			} else {
-				cv.lim.resolve([]string{prefix + strconv.Itoa(i)})
-			}
+			cv.lim.resolve(keys[i&(pool-1)])
 			i++
 		}
 	})
