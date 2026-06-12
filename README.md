@@ -5,8 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://goreportcard.com/report/github.com/eben-vranken/promcap"><img src="https://goreportcard.com/badge/github.com/eben-vranken/promcap" alt="Go Report Card"></a>
+  <a href="https://github.com/eben-vranken/promcap/actions/workflows/ci.yml"><img src="https://github.com/eben-vranken/promcap/actions/workflows/ci.yml/badge.svg" alt="CI"></a>  
   <a href="https://pkg.go.dev/github.com/eben-vranken/promcap"><img src="https://pkg.go.dev/badge/github.com/eben-vranken/promcap.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/eben-vranken/promcap"><img src="https://goreportcard.com/badge/github.com/eben-vranken/promcap" alt="Go Report Card"></a>
   <a href="https://codecov.io/gh/eben-vranken/promcap"><img src="https://codecov.io/gh/eben-vranken/promcap/branch/main/graph/badge.svg" alt="Coverage"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License"></a>
 </p>
