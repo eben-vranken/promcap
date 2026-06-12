@@ -30,11 +30,15 @@ func BenchmarkResolveAdmit(b *testing.B) {
 		[]string{"user"},
 		CapOpts{MaxSeries: b.N + 1},
 	)
+	keys := make([][]string, b.N)
+	for i := range keys {
+		keys[i] = []string{strconv.Itoa(i)}
+	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cv.lim.resolve([]string{strconv.Itoa(i)})
+		cv.lim.resolve(keys[i])
 	}
 }
 
@@ -61,11 +65,15 @@ func BenchmarkResolveEvictFlood(b *testing.B) {
 		[]string{"user"},
 		CapOpts{MaxSeries: 128, Evict: true},
 	)
+	keys := make([][]string, b.N)
+	for i := range keys {
+		keys[i] = []string{strconv.Itoa(i)}
+	}
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		cv.lim.resolve([]string{strconv.Itoa(i)})
+		cv.lim.resolve(keys[i])
 	}
 }
 

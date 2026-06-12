@@ -186,17 +186,20 @@ series' accumulated total is discarded.
 
 | Path | ns/op | B/op | allocs/op |
 |------|------:|-----:|----------:|
-| Admitted combination (hot path) | ~16 | 0 | 0 |
-| Overflow (cap reached) | ~71 | 23 | 1 |
-| New admission (under cap) | ~545 | 207 | 4 |
-| Eviction flood (`Evict: true`) | ~264 | 119 | 3 |
-| Mixed read/write, parallel | ~347 | 81 | 2 |
+| Admitted combination (hot path) | ~14 | 0 | 0 |
+| Overflow (cap reached) | ~82 | 23 | 1 |
+| New admission (under cap) | ~498 | 196 | 3 |
+| Eviction flood (`Evict: true`) | ~234 | 112 | 3 |
+| Mixed read/write, parallel (12 cores) | ~32 | 0 | 0 |
 
 The case that matters in steady state, a label combination that has already
-been admitted, resolves in about **16 ns with zero allocations**, so the cap
-adds essentially nothing to a metric that is behaving. The expensive paths are
-the ones you want to be rare: minting a brand-new series, or churning the
-working set under eviction.
+been admitted, resolves in about **14 ns with zero allocations**, so the cap
+adds essentially nothing to a metric that is behaving. Because that hot path
+takes only a read lock, it scales across cores instead of serializing: the
+mixed read/write parallel workload resolves in **~32 ns/op on 12 cores, down
+from ~347 ns** when every call contended on a single mutex. The expensive
+paths are the ones you want to be rare: minting a brand-new series, or
+churning the working set under eviction.
 
 Reproduce with:
 
