@@ -91,21 +91,23 @@ func (lim *limiter) resolve(lvs []string) []string {
 	lim.mu.RUnlock()
 
 	lim.mu.Lock()
-	defer lim.mu.Unlock()
 
 	if elem, ok := lim.seen[key]; ok {
 		elem.Value.(*lruEntry).accessed.Store(true)
+		lim.mu.Unlock()
 		return lvs
 	}
 
 	if len(lim.seen) >= lim.maxSeries {
 		if !lim.evict {
+			lim.mu.Unlock()
 			return lim.overflow(lvs)
 		}
 		lim.evictOldest()
 	}
 	elem := lim.lru.PushFront(&lruEntry{key: key, lvs: append([]string(nil), lvs...)})
 	lim.seen[key] = elem
+	lim.mu.Unlock()
 	return lvs
 }
 
